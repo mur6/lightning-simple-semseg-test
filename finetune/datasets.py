@@ -63,11 +63,12 @@ NYUD_STD = [0.28918225, 0.29590312, 0.3093034]
 #     def compute_image_std(self):
 #         return np.std(self.images / 255, axis=(0, 2, 3))
 
+from flash.core.data.io.input import DataKeys, Input, InputBase, IterableInput
+
 
 class SimpleDepthDataset(data.Dataset):
     def __init__(self, root_dir, X):
         self.img_path = root_dir / "train_images"
-        self.depth_path = root_dir / "train_depth"
         self.mask_path = root_dir / "train_masks"
         self.transform = None
         self.X = X
@@ -77,10 +78,9 @@ class SimpleDepthDataset(data.Dataset):
 
     def __getitem__(self, idx):
         id = self.X[idx]
-        img = cv2.imread(self.img_path / f"image_{id:06}.jpg")
+        img = cv2.imread(str(self.img_path / f"image_{id:06}.jpg"))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(self.mask_path / f"image_{id:06}.png", cv2.IMREAD_GRAYSCALE)
-        depth = np.load(self.depth_path / f"{id:06}.npy")
+        mask = cv2.imread(str(self.mask_path / f"image_{id:06}.png"), cv2.IMREAD_GRAYSCALE)
 
         if self.transform is not None:
             aug = self.transform(image=img, mask=mask)
@@ -94,7 +94,8 @@ class SimpleDepthDataset(data.Dataset):
         t = ToTensor()
         img = t(img)
         mask = torch.from_numpy(mask).long()
-        return img, mask, depth
+        # return img, mask
+        return {DataKeys.INPUT: img, DataKeys.TARGET: mask}
 
 
 class Nutrition5k(data.Dataset):
@@ -155,9 +156,7 @@ class Nutrition5k(data.Dataset):
         id = self.X[index]
         rgb_image = cv2.imread(str(self.img_path / f"image_{id:06}.jpg"))
         rgb_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(
-            str(self.mask_path / f"image_{id:06}.png"), cv2.IMREAD_GRAYSCALE
-        )
+        mask = cv2.imread(str(self.mask_path / f"image_{id:06}.png"), cv2.IMREAD_GRAYSCALE)
         depth_image = np.load(str(self.depth_path / f"{id:06}.npy"))
         # depth_image = cv2.imread(depth_image_path, cv2.IMREAD_UNCHANGED)
 
@@ -177,9 +176,7 @@ class Nutrition5k(data.Dataset):
         rgb_image = rgb_image / 255.0
         rgb_image = rgb_image.astype(np.float32)
 
-        transformed_image = self.transform(
-            {"image": rgb_image, "depth": inverse_depth, "mask": mask}
-        )
+        transformed_image = self.transform({"image": rgb_image, "depth": inverse_depth, "mask": mask})
 
         rgb_image = transformed_image["image"]
         inverse_depth = transformed_image["depth"]

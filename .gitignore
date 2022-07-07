@@ -2,3 +2,4 @@
 *.pyc
 train/
 models/
+lightning_logs/

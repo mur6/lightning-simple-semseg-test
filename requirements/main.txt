@@ -1,2 +1,9 @@
 icevision
 lightning-flash[image]
+torch
+torchvision
+opencv-python
+timm
+pytorch-lightning
+scikit-learn
+matplotlib
